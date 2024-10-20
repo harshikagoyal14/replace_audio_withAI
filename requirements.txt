@@ -1,0 +1,15 @@
+streamlit
+fastdtw
+scipy
+librosa
+pydub
+moviepy
+google-cloud-speech
+google-cloud-texttospeech
+openai==0.28
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+soundfile
+numpy
+matplotlib
