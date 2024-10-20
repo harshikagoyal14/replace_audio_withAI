@@ -12,8 +12,7 @@ import soundfile as sf
 import numpy as np
 
 # Set up Google Cloud credentials and environment variables
-credentials = service_account.Credentials.from_service_account_file('client_secret.json')
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'client_secret.json'
+credentials = service_account.Credentials.from_service_account_info(st.secrets["google_cloud"])
 
 # Streamlit app title
 st.title("Video Transcription and Audio Replacement with Synchronization")
@@ -58,10 +57,9 @@ def transcribe_audio_chunked(video_path):
     return full_transcript
 
 # GPT-4 correction function
-openai.api_type = "azure"
-openai.api_key = "22ec84421ec24230a3638d1b51e3a7dc"
-openai.api_base = "https://internshala.openai.azure.com/"
-openai.api_version = "2024-08-01-preview"
+openai.api_key = st.secrets["openai"]["api_key"]
+openai.api_base = st.secrets["openai"]["api_base"]
+openai.api_version = st.secrets["openai"]["api_version"]
 
 def correct_transcription(transcript):
     try:
