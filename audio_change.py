@@ -57,9 +57,12 @@ def transcribe_audio_chunked(video_path):
     return full_transcript
 
 # GPT-4 correction function
+openai.api_type = st.secrets["openai"]["api_type"]
 openai.api_key = st.secrets["openai"]["api_key"]
 openai.api_base = st.secrets["openai"]["api_base"]
 openai.api_version = st.secrets["openai"]["api_version"]
+
+
 
 def correct_transcription(transcript):
     try:
