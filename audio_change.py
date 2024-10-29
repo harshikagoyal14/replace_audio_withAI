@@ -112,10 +112,13 @@ def correct_transcription(transcript):
     return corrected_transcript
 
 # Google Cloud Text-to-Speech function
-def generate_audio_from_text(corrected_text, credentials):
+def generate_audio_from_text(corrected_text, voice_name, credentials):
     client = texttospeech.TextToSpeechClient(credentials=credentials)
     input_text = texttospeech.SynthesisInput(text=corrected_text)
-    voice = texttospeech.VoiceSelectionParams(language_code="en-US", name="en-US-Standard-C")
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US",
+        name=voice_name
+    )
     audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
     response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
     with open("corrected_audio.mp3", "wb") as out:
@@ -149,6 +152,19 @@ def align_audio_dtw(original_audio_path, new_audio_path):
 
     return aligned_audio_path
 
+# Function to list available voices
+def list_available_voices(credentials):
+    client = texttospeech.TextToSpeechClient(credentials=credentials)
+    voices = client.list_voices()
+    return [(voice.name, voice.ssml_gender) for voice in voices.voices]
+
+# Fetch available voices
+available_voices = list_available_voices(credentials)
+voice_options = [voice[0] for voice in available_voices]
+
+# Streamlit UI for voice selection
+selected_voice = st.selectbox("Choose Voice", voice_options)
+
 # Streamlit button to process the uploaded video
 if uploaded_video is not None:
     video_path = uploaded_video.name
@@ -165,9 +181,9 @@ if uploaded_video is not None:
     corrected_transcript = correct_transcription(transcript)
     st.write("Corrected Transcript:", corrected_transcript)
 
-    # Step 3: Generate corrected audio
+    # Step 3: Generate corrected audio with selected voice
     st.write("Generating corrected audio...")
-    corrected_audio_path = generate_audio_from_text(corrected_transcript, credentials)
+    corrected_audio_path = generate_audio_from_text(corrected_transcript, selected_voice, credentials)
 
     # Step 4: Align corrected audio to original video using DTW
     st.write("Aligning corrected audio with the original video...")
