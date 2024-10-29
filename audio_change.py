@@ -5,7 +5,7 @@ import librosa
 from pydub import AudioSegment
 import moviepy.editor as mp
 from google.cloud import speech, texttospeech
-import genai  # Importing the genai library
+import google.generativeai as genai
 import os
 from google.oauth2 import service_account
 import soundfile as sf
