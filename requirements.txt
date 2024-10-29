@@ -3,7 +3,6 @@ fastdtw
 scipy
 librosa
 pydub
-google-genai
 google-generativeai
 moviepy
 google-cloud-speech
