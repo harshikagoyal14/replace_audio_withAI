@@ -90,7 +90,14 @@ def correct_transcription(transcript):
     )
 
     # Craft the prompt for correction
-    prompt = transcript + "\nCorrect grammatical errors and remove filler words."
+   prompt = (
+    "Your task is to enhance the provided transcript by correcting any grammatical errors and removing filler words, "
+    "such as 'um,' 'uh,' and similar phrases. While making these corrections, it is essential to maintain the original "
+    "sentence structure and meaning as closely as possible to avoid any issues with lip syncing. Please ensure that the "
+    "revised text reads smoothly while retaining the context of the original speech.\n"
+    + transcript
+   )
+
     response = chat_session.send_message(
         {
             "role": "user",
