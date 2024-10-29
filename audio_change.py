@@ -42,7 +42,7 @@ def transcribe_audio_chunked(video_path):
     full_transcript = ""
     for chunk_file in chunk_files:
         file_size = os.path.getsize(chunk_file)
-        if file_size > 10485760:
+        if file_size > 10485760:  # 10 MB limit
             raise Exception(f"Audio chunk {chunk_file} exceeds 10 MB size limit")
         with open(chunk_file, "rb") as audio_file:
             content = audio_file.read()
@@ -112,12 +112,12 @@ def correct_transcription(transcript):
     return corrected_transcript
 
 # Google Cloud Text-to-Speech function
-def generate_audio_from_text(corrected_text, voice_name, credentials):
+def generate_audio_from_text(corrected_text, selected_voice, credentials):
     client = texttospeech.TextToSpeechClient(credentials=credentials)
     input_text = texttospeech.SynthesisInput(text=corrected_text)
     voice = texttospeech.VoiceSelectionParams(
         language_code="en-US",
-        name=voice_name
+        name=selected_voice  # Use selected voice
     )
     audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
     response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
@@ -156,14 +156,16 @@ def align_audio_dtw(original_audio_path, new_audio_path):
 def list_available_voices(credentials):
     client = texttospeech.TextToSpeechClient(credentials=credentials)
     voices = client.list_voices()
-    return [(voice.name, voice.ssml_gender) for voice in voices.voices]
+    voice_list = []
+    for voice in voices.voices:
+        voice_info = f"{voice.name} - {voice.ssml_gender} ({voice.language_codes[0]})"
+        voice_list.append((voice.name, voice_info))
+    return voice_list
 
-# Fetch available voices
+# Fetch available voices with improved descriptions
 available_voices = list_available_voices(credentials)
-voice_options = [voice[0] for voice in available_voices]
-
-# Streamlit UI for voice selection
-selected_voice = st.selectbox("Choose Voice", voice_options)
+voice_options = [voice[1] for voice in available_voices]  # Use the improved descriptions for the selectbox
+voice_dict = {voice[1]: voice[0] for voice in available_voices}  # Create a mapping for the selected voice
 
 # Streamlit button to process the uploaded video
 if uploaded_video is not None:
@@ -181,7 +183,9 @@ if uploaded_video is not None:
     corrected_transcript = correct_transcription(transcript)
     st.write("Corrected Transcript:", corrected_transcript)
 
-    # Step 3: Generate corrected audio with selected voice
+    # Step 3: Generate corrected audio
+    selected_voice_description = st.selectbox("Choose Voice", voice_options)
+    selected_voice = voice_dict[selected_voice_description]  # Get the actual voice name from the description
     st.write("Generating corrected audio...")
     corrected_audio_path = generate_audio_from_text(corrected_transcript, selected_voice, credentials)
 
