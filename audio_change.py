@@ -67,7 +67,7 @@ openai.api_version = st.secrets["openai"]["api_version"]
 def correct_transcription(transcript):
     try:
         response = openai.ChatCompletion.create(
-            engine="gpt-4o",
+            engine="gpt-4",
             messages=[
                 {"role": "system", "content": "Correct grammatical errors and remove filler words."},
                 {"role": "user", "content": transcript}
