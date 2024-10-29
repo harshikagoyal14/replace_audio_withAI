@@ -5,7 +5,7 @@ import librosa
 from pydub import AudioSegment
 import moviepy.editor as mp
 from google.cloud import speech, texttospeech
-import openai
+import genai  # Importing the genai library
 import os
 from google.oauth2 import service_account
 import soundfile as sf
@@ -13,6 +13,7 @@ import numpy as np
 
 # Set up Google Cloud credentials and environment variables
 credentials = service_account.Credentials.from_service_account_info(st.secrets["google_cloud"])
+GOOGLE_API_KEY = st.secrets["google_api"]["api_key"]
 
 # Streamlit app title
 st.title("Video Transcription and Audio Replacement with Synchronization")
@@ -56,29 +57,52 @@ def transcribe_audio_chunked(video_path):
             full_transcript += result.alternatives[0].transcript + " "
     return full_transcript
 
-# GPT-4 correction function
-openai.api_type = st.secrets["openai"]["api_type"]
-openai.api_key = st.secrets["openai"]["api_key"]
-openai.api_base = st.secrets["openai"]["api_base"]
-openai.api_version = st.secrets["openai"]["api_version"]
-
-
-
+# Gemini correction function
 def correct_transcription(transcript):
-    try:
-        response = openai.ChatCompletion.create(
-            engine="gpt-4",
-            messages=[
-                {"role": "system", "content": "Correct grammatical errors and remove filler words."},
-                {"role": "user", "content": transcript}
-            ],
-            max_tokens=1000,
-            temperature=0.7
-        )
-        corrected_transcript = response['choices'][0]['message']['content']
-        return corrected_transcript
-    except Exception as e:
-        st.error(f"Error correcting transcription: {e}")
+    # Configure the API key
+    genai.configure(api_key=GOOGLE_API_KEY)
+
+    # Generation configuration settings
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+
+    # Initialize the model
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config=generation_config,
+    )
+
+    # Start a chat session
+    chat_session = model.start_chat(
+        history=[
+            {
+                "role": "user",
+                "parts": [
+                    {"text": transcript}
+                ]
+            }
+        ]
+    )
+
+    # Craft the prompt for correction
+    prompt = transcript + "\nCorrect grammatical errors and remove filler words."
+    response = chat_session.send_message(
+        {
+            "role": "user",
+            "parts": [
+                {"text": prompt}
+            ]
+        }
+    )
+
+    # Process the response and remove unwanted characters
+    corrected_transcript = response.text.replace("*", "").replace("-", "")
+    return corrected_transcript
 
 # Google Cloud Text-to-Speech function
 def generate_audio_from_text(corrected_text, credentials):
