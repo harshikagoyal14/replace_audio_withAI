@@ -116,8 +116,8 @@ def generate_audio_from_text(corrected_text, selected_voice, credentials):
     client = texttospeech.TextToSpeechClient(credentials=credentials)
     input_text = texttospeech.SynthesisInput(text=corrected_text)
     voice = texttospeech.VoiceSelectionParams(
-        language_code="en-US",
-        name=selected_voice  # Use selected voice
+        language_code="en-US" if selected_voice is None else selected_voice,  # Use default if none selected
+        name=selected_voice if selected_voice is not None else "en-US-Standard-B"  # Fallback voice if none selected
     )
     audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
     response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
@@ -152,13 +152,14 @@ def align_audio_dtw(original_audio_path, new_audio_path):
 
     return aligned_audio_path
 
-# Function to list available voices
+# Function to list available voices with improved descriptions
 def list_available_voices(credentials):
     client = texttospeech.TextToSpeechClient(credentials=credentials)
     voices = client.list_voices()
     voice_list = []
     for voice in voices.voices:
-        voice_info = f"{voice.name} - {voice.ssml_gender} ({voice.language_codes[0]})"
+        # Improved description format
+        voice_info = f"{voice.name} - {voice.ssml_gender} ({', '.join(voice.language_codes)})"
         voice_list.append((voice.name, voice_info))
     return voice_list
 
@@ -183,17 +184,20 @@ if uploaded_video is not None:
     corrected_transcript = correct_transcription(transcript)
     st.write("Corrected Transcript:", corrected_transcript)
 
-    # Step 3: Generate corrected audio
-    selected_voice_description = st.selectbox("Choose Voice", voice_options)
-    selected_voice = voice_dict[selected_voice_description]  # Get the actual voice name from the description
+    # Step 3: Voice selection
+    st.write("Please select a voice for audio generation:")
+    selected_voice_description = st.selectbox("Choose Voice", ["None"] + voice_options)  # Add "None" option
+    selected_voice = None if selected_voice_description == "None" else voice_dict[selected_voice_description]  # Get the actual voice name
+
+    # Step 4: Generate corrected audio
     st.write("Generating corrected audio...")
     corrected_audio_path = generate_audio_from_text(corrected_transcript, selected_voice, credentials)
 
-    # Step 4: Align corrected audio to original video using DTW
+    # Step 5: Align corrected audio to original video using DTW
     st.write("Aligning corrected audio with the original video...")
     aligned_audio_path = align_audio_dtw("extracted_audio.wav", corrected_audio_path)
 
-    # Step 5: Replace audio in the video
+    # Step 6: Replace audio in the video
     st.write("Replacing audio in the video...")
     output_video_path = 'output_video.mp4'
     replace_audio_in_video(video_path, aligned_audio_path, output_video_path)
