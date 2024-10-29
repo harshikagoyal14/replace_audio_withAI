@@ -60,7 +60,7 @@ def transcribe_audio_chunked(video_path):
 openai.api_type = st.secrets["openai"]["api_type"]
 openai.api_key = st.secrets["openai"]["api_key"]
 openai.api_base = st.secrets["openai"]["api_base"]
-#openai.api_version = st.secrets["openai"]["api_version"]
+openai.api_version = st.secrets["openai"]["api_version"]
 
 
 
